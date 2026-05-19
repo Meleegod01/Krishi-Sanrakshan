@@ -1,10 +1,13 @@
-import { ExclamationTriangleIcon, ClockIcon, MapPinIcon } from '@heroicons/react/24/outline'
+import { ExclamationTriangleIcon, ClockIcon, MapPinIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline'
 import { DamageAlert } from '@/lib/types'
 import { format } from 'date-fns'
+import { krishiSanrakshanAPI } from '@/lib/api'
+import { useState } from 'react'
 
 interface AlertCardProps {
   alert: DamageAlert
   onView?: () => void
+  onStatusUpdate?: () => void
 }
 
 const severityColors = {
@@ -26,9 +29,21 @@ const statusColors = {
   reviewing: 'bg-blue-100 text-blue-800',
   approved: 'bg-green-100 text-green-800',
   rejected: 'bg-red-100 text-red-800',
+  fused: 'bg-purple-100 text-purple-800',
 }
 
-export default function AlertCard({ alert, onView }: AlertCardProps) {
+export default function AlertCard({ alert, onView, onStatusUpdate }: AlertCardProps) {
+  const [isUpdating, setIsUpdating] = useState(false)
+
+  const handleStatusUpdate = async (newStatus: string) => {
+    setIsUpdating(true)
+    const success = await krishiSanrakshanAPI.updateAlertStatus(alert.id, newStatus)
+    setIsUpdating(false)
+    if (success && onStatusUpdate) {
+      onStatusUpdate()
+    }
+  }
+
   return (
     <div className={`border-l-4 rounded-lg p-4 ${severityColors[alert.severity]} card-hover`}>
       <div className="flex items-start justify-between">
@@ -44,7 +59,7 @@ export default function AlertCard({ alert, onView }: AlertCardProps) {
               <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${severityBadges[alert.severity]}`}>
                 {alert.severity}
               </span>
-              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${statusColors[alert.status]}`}>
+              <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${statusColors[alert.status] || 'bg-gray-100'}`}>
                 {alert.status}
               </span>
             </div>
@@ -71,6 +86,27 @@ export default function AlertCard({ alert, onView }: AlertCardProps) {
               <p className="text-xs font-medium text-gray-900 mt-2">
                 Claim Amount: ₹{alert.claimAmount.toLocaleString('en-IN')}
               </p>
+            )}
+
+            {alert.status === 'pending' && (
+              <div className="flex items-center gap-2 mt-4">
+                <button
+                  onClick={() => handleStatusUpdate('approved')}
+                  disabled={isUpdating}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-white bg-green-600 hover:bg-green-700 rounded transition-colors disabled:opacity-50"
+                >
+                  <CheckIcon className="h-3.5 w-3.5" />
+                  Approve
+                </button>
+                <button
+                  onClick={() => handleStatusUpdate('rejected')}
+                  disabled={isUpdating}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded transition-colors disabled:opacity-50"
+                >
+                  <XMarkIcon className="h-3.5 w-3.5" />
+                  Reject
+                </button>
+              </div>
             )}
           </div>
         </div>

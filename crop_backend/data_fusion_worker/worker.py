@@ -16,16 +16,26 @@ DLX_NAME = 'fusion_dlx'
 def get_db_connection():
     return psycopg2.connect(DATABASE_URL)
 
-# --- Mock External APIs ---
-def get_mock_weather_data(latitude, longitude):
-    print(f"[Mock API] Fetching weather for {latitude}, {longitude}...")
-    time.sleep(1) # Simulate network delay
-    return {
-        "temperature_c": 28 + (latitude % 1) * 5, # Simulate variation
-        "humidity_percent": 70 + (longitude % 1) * 10,
-        "precipitation_mm_24h": 0.5 + (latitude * longitude % 1) * 2,
-        "wind_speed_kmh": 10 + (longitude % 1) * 5
-    }
+import requests
+
+# --- Real External APIs ---
+def get_real_weather_data(latitude, longitude):
+    print(f"[API] Fetching real weather for {latitude}, {longitude} from Open-Meteo...")
+    try:
+        url = f"https://api.open-meteo.com/v1/forecast?latitude={latitude}&longitude={longitude}&current=temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m"
+        response = requests.get(url, timeout=5)
+        response.raise_for_status()
+        data = response.json().get('current', {})
+        return {
+            "temperature_c": data.get('temperature_2m'),
+            "humidity_percent": data.get('relative_humidity_2m'),
+            "precipitation_mm_24h": data.get('precipitation'),
+            "wind_speed_kmh": data.get('wind_speed_10m'),
+            "source": "Open-Meteo"
+        }
+    except Exception as e:
+        print(f"Error fetching weather: {e}")
+        return {"error": "Weather service unavailable"}
 
 def get_mock_satellite_data(latitude, longitude, growth_stage):
     print(f"[Mock API] Fetching satellite data for {latitude}, {longitude}, {growth_stage}...")
@@ -72,7 +82,7 @@ def process_message(channel, method, properties, body):
             user_id, latitude, longitude, growth_stage, analysis_result_json = submission_data
 
             # 2. Call external APIs
-            weather_data = get_mock_weather_data(latitude, longitude)
+            weather_data = get_real_weather_data(latitude, longitude)
             satellite_data = get_mock_satellite_data(latitude, longitude, growth_stage)
 
             # 3. Aggregate and perform final assessment (mock for now)

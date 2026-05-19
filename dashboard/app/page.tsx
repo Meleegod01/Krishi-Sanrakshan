@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import CropicDashboardLayout from '@/components/layout/CropicDashboardLayout'
 import StatsCard from '@/components/cards/StatsCard'
-import CropMap from '@/components/maps/CropMap'
+import dynamic from 'next/dynamic'
+const CropMap = dynamic(() => import('@/components/maps/CropMap'), { ssr: false })
 import MapLegend from '@/components/maps/MapLegend'
 import AlertCard from '@/components/cards/AlertCard'
 import { 

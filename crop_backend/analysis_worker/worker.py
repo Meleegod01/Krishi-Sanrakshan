@@ -73,8 +73,8 @@ def process_message(channel, method, properties, body):
         if status == 'COMPLETED':
             fusion_message = {"submission_id": submission_id}
             channel.basic_publish(
-                exchange=FUSION_DLX_NAME, # Use the DLX as the exchange for routing
-                routing_key=FUSION_QUEUE_NAME, # Route to the fusion queue
+                exchange='', # Use the default exchange
+                routing_key=FUSION_QUEUE_NAME, # Route directly to the fusion queue
                 body=json.dumps(fusion_message),
                 properties=pika.BasicProperties(delivery_mode=2) # Make message persistent
             )

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import CropicDashboardLayout from '@/components/layout/CropicDashboardLayout'
-import CropMap from '@/components/maps/CropMap'
+import dynamic from 'next/dynamic'
+const CropMap = dynamic(() => import('@/components/maps/CropMap'), { ssr: false })
 import { cropicAPI } from '@/lib/api'
 import { MapMarker } from '@/lib/types'
 

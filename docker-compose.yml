@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3.9-management-alpine
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: cropic_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./crop_backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d cropic_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  ml_service:
+    build: ./crop_backend/ml_service
+    ports:
+      - '8001:8001'
+    volumes:
+      - uploads_data:/app/uploads
+    command: uvicorn main:app --host 0.0.0.0 --port 8001
+
+  analysis_worker:
+    build: ./crop_backend/analysis_worker
+    volumes:
+      - uploads_data:/app/uploads
+    environment:
+      DATABASE_URL: postgres://user:password@postgres:5432/cropic_db
+      ML_API_URL: http://ml_service:8001
+      RABBITMQ_URL: amqp://rabbitmq
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ml_service:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+
+  data_fusion_worker:
+    build: ./crop_backend/data_fusion_worker
+    environment:
+      DATABASE_URL: postgres://user:password@postgres:5432/cropic_db
+      RABBITMQ_URL: amqp://rabbitmq
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  ingestion_api:
+    build: ./crop_backend/ingestion_api
+    ports:
+      - '3000:3000'
+    volumes:
+      - uploads_data:/app/uploads
+    environment:
+      DATABASE_URL: postgres://user:password@postgres:5432/cropic_db
+      RABBITMQ_URL: amqp://rabbitmq
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  dashboard_api:
+    build: ./crop_backend/dashboard_api
+    ports:
+      - '8002:8002'
+    environment:
+      DATABASE_URL: postgres://user:password@postgres:5432/cropic_db
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  dashboard_frontend:
+    build:
+      context: ./dashboard
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:8002
+    ports:
+      - '3001:3001'
+    depends_on:
+      - dashboard_api
+
+  farmer_frontend:
+    build:
+      context: ./app
+      args:
+        - VITE_API_URL=http://localhost:3000
+    ports:
+      - '8080:80'
+    depends_on:
+      - ingestion_api
+
+volumes:
+  postgres_data:
+  uploads_data:

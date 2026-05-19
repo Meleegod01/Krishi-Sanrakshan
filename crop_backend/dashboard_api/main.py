@@ -50,6 +50,52 @@ class AlertItem(BaseModel):
 def health_check():
     return {"status": "Dashboard API is running."}
 
+class StatusUpdate(BaseModel):
+    status: str
+
+class AssessmentUpdate(BaseModel):
+    overall_health_score: float
+    recommendations: List[str]
+
+@app.put('/alerts/{submission_id}/status')
+def update_alert_status(submission_id: int, update: StatusUpdate):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        # In a real app, alerts might have their own table, but here we update the submission status
+        cur.execute(
+            "UPDATE submissions SET status = %s WHERE id = %s",
+            (update.status, submission_id)
+        )
+        conn.commit()
+        return {"message": "Status updated successfully"}
+    except Exception as e:
+        print(f"Error updating alert status: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+    finally:
+        if conn:
+            conn.close()
+
+@app.put('/reports/{submission_id}/assessment')
+def update_report_assessment(submission_id: int, update: AssessmentUpdate):
+    conn = None
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute(
+            "UPDATE fused_reports SET final_assessment = %s WHERE submission_id = %s",
+            (json.dumps(update.model_dump()), submission_id)
+        )
+        conn.commit()
+        return {"message": "Assessment updated successfully"}
+    except Exception as e:
+        print(f"Error updating assessment: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+    finally:
+        if conn:
+            conn.close()
+
 @app.get('/reports', response_model=List[FusedReportBase])
 def get_all_reports(skip: int = 0, limit: int = 100):
     conn = None

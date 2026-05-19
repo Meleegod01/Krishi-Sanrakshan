@@ -14,19 +14,19 @@ export default function AlertsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [severityFilter, setSeverityFilter] = useState<string>('all')
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const alertsData = await cropicAPI.getDamageAlerts()
-        setAlerts(alertsData)
-        setFilteredAlerts(alertsData)
-      } catch (error) {
-        console.error('Error loading alerts:', error)
-      } finally {
-        setLoading(false)
-      }
+  const loadData = async () => {
+    try {
+      const alertsData = await cropicAPI.getDamageAlerts()
+      setAlerts(alertsData)
+      setFilteredAlerts(alertsData)
+    } catch (error) {
+      console.error('Error loading alerts:', error)
+    } finally {
+      setLoading(false)
     }
-    
+  }
+
+  useEffect(() => {
     loadData()
   }, [])
 
@@ -199,6 +199,7 @@ export default function AlertsPage() {
                 key={alert.id}
                 alert={alert}
                 onView={() => console.log('View alert:', alert.id)}
+                onStatusUpdate={loadData}
               />
             ))}
           </div>
