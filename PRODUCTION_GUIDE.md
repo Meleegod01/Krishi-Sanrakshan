@@ -1,67 +1,48 @@
-# 🌍 Krishi-Sanrakshan: Hybrid Deployment Guide
+# 🌍 Krishi-Sanrakshan: FREE Hybrid Deployment Guide
 
-This guide contains the environment variables and settings you need to host the project online for free.
-
----
-
-## 1. Database (Neon.tech)
-**Action:** Create a Postgres project on [Neon.tech](https://neon.tech/).
-*   **Initialization:** Run the SQL from `crop_backend/db/init.sql` in the Neon SQL Editor.
-*   **Variable to Save:** `DATABASE_URL` (e.g., `postgres://user:pass@host/neondb?sslmode=require`)
-
-## 2. Message Queue (CloudAMQP)
-**Action:** Create a "Little Lemur" instance on [CloudAMQP](https://www.cloudamqp.com/).
-*   **Variable to Save:** `RABBITMQ_URL` (e.g., `amqps://user:pass@host/vhost`)
+This is the simplified **"No Credit Card"** guide to host your app permanently for free.
 
 ---
 
-## 3. Backend Services (Koyeb)
-You need to deploy these 4 services on [Koyeb](https://www.koyeb.com/).
-
-### Service A: Ingestion API
-*   **Context Dir:** `crop_backend/ingestion_api`
-*   **Variables:**
-    *   `DATABASE_URL`: (From Neon)
-    *   `RABBITMQ_URL`: (From CloudAMQP)
-    *   `SECRET_KEY`: (A random long string for JWT)
-
-### Service B: Dashboard API
-*   **Context Dir:** `crop_backend/dashboard_api`
-*   **Variables:**
-    *   `DATABASE_URL`: (From Neon)
-
-### Service C: ML Service
-*   **Context Dir:** `crop_backend/ml_service`
-*   **Variables:** *None required for mock version.*
-
-### Service D: Analysis Worker
-*   **Context Dir:** `crop_backend/analysis_worker`
-*   **Variables:**
-    *   `DATABASE_URL`: (From Neon)
-    *   `RABBITMQ_URL`: (From CloudAMQP)
-    *   `ML_API_URL`: (The URL of Service C above)
+## 1. Prerequisites (Free & No Credit Card)
+1.  **Database:** [Neon.tech](https://neon.tech/) (Free Postgres)
+2.  **Queue:** [CloudAMQP](https://www.cloudamqp.com/) (Free RabbitMQ)
+3.  **Backend:** [Hugging Face Spaces](https://huggingface.co/spaces) (Free Docker Hosting)
+4.  **Frontend:** [Vercel](https://vercel.com/) (Free Web Hosting)
 
 ---
 
-## 4. Frontends (Vercel)
-Deploy these using the [Vercel Dashboard](https://vercel.com/).
+## 2. Step-by-Step Instructions
 
-### Frontend A: Official Dashboard
-*   **Root Directory:** `dashboard`
-*   **Framework:** Next.js
-*   **Variables:**
-    *   `NEXT_PUBLIC_API_URL`: (The public URL of Service B / Dashboard API)
+### Step A: Initialize the Database (Neon)
+1. Create a project on Neon.
+2. Run the SQL from `crop_backend/db/init.sql` in their SQL Editor.
+3. Save your `DATABASE_URL`.
 
-### Frontend B: Farmer App
-*   **Root Directory:** `app`
-*   **Framework:** Vite
-*   **Variables:**
-    *   `VITE_API_URL`: (The public URL of Service A / Ingestion API)
+### Step B: Create the Queue (CloudAMQP)
+1. Create a "Little Lemur" instance.
+2. Save your `AMQP URL` (starts with `amqps://`).
+
+### Step C: Deploy Backend (Hugging Face Spaces)
+1. Go to [Hugging Face Spaces](https://huggingface.co/new-space).
+2. **Name:** `krishi-backend`
+3. **SDK:** Select **Docker**.
+4. **Template:** Blank.
+5. **Privacy:** Public.
+6. Once created, go to **Settings -> Variables and Secrets**.
+7. Add these **Secrets**:
+    *   `DATABASE_URL`: (Your Neon URL)
+    *   `RABBITMQ_URL`: (Your CloudAMQP URL)
+    *   `ML_API_URL`: `http://localhost:8001`
+8. Upload your code or connect your GitHub. Hugging Face will find the `crop_backend/monolith/Dockerfile` (you may need to move it to the root or tell HF where it is).
+
+### Step D: Deploy Frontends (Vercel)
+1.  **Dashboard:** Root `dashboard`. 
+    *   `NEXT_PUBLIC_API_URL`: (The URL Hugging Face gives you for port 8002)
+2.  **Farmer App:** Root `app`.
+    *   `VITE_API_URL`: (The URL Hugging Face gives you for port 3000)
 
 ---
 
-## 🚀 Deployment Checklist
-1. [ ] Push this entire project to a **GitHub Repository**.
-2. [ ] Connect Neon and CloudAMQP first.
-3. [ ] Deploy the 4 Koyeb services.
-4. [ ] Deploy the 2 Vercel frontends last (so you have the API URLs ready).
+## 🚀 Why this works?
+By using the **Monolith** folder I created, you run all 4 backend services in **one** free space. No need for multiple Koyeb apps or credit cards.

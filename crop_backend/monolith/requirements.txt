@@ -1,0 +1,14 @@
+fastapi
+uvicorn
+pika
+psycopg2-binary
+requests
+pydantic
+python-multipart
+bcryptjs
+jsonwebtoken
+express
+multer
+pg
+path
+dotenv
